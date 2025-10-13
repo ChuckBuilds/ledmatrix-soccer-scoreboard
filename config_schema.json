@@ -6,7 +6,7 @@
   "properties": {
     "enabled": {
       "type": "boolean",
-      "default": true,
+      "default": false,
       "description": "Enable or disable the soccer scoreboard plugin"
     },
     "display_duration": {
@@ -26,12 +26,118 @@
       "default": false,
       "description": "Show team rankings (when available)"
     },
+    "live_priority": {
+      "type": "boolean",
+      "default": true,
+      "description": "Prioritize live games over scheduled games"
+    },
+    "live_game_duration": {
+      "type": "number",
+      "default": 30,
+      "minimum": 10,
+      "maximum": 120,
+      "description": "Duration in seconds to display live games"
+    },
+    "show_odds": {
+      "type": "boolean",
+      "default": true,
+      "description": "Show betting odds for games"
+    },
+    "test_mode": {
+      "type": "boolean",
+      "default": false,
+      "description": "Enable test mode for development"
+    },
     "update_interval_seconds": {
       "type": "integer",
-      "default": 60,
+      "default": 3600,
       "minimum": 30,
-      "maximum": 300,
+      "maximum": 86400,
       "description": "How often to fetch new data (seconds)"
+    },
+    "live_update_interval": {
+      "type": "integer",
+      "default": 30,
+      "minimum": 10,
+      "maximum": 300,
+      "description": "Update interval for live games (seconds)"
+    },
+    "recent_update_interval": {
+      "type": "integer",
+      "default": 3600,
+      "minimum": 60,
+      "maximum": 86400,
+      "description": "Update interval for recent games (seconds)"
+    },
+    "upcoming_update_interval": {
+      "type": "integer",
+      "default": 3600,
+      "minimum": 60,
+      "maximum": 86400,
+      "description": "Update interval for upcoming games (seconds)"
+    },
+    "recent_games_to_show": {
+      "type": "integer",
+      "default": 1,
+      "minimum": 1,
+      "maximum": 20,
+      "description": "Maximum number of recent games to display"
+    },
+    "upcoming_games_to_show": {
+      "type": "integer",
+      "default": 1,
+      "minimum": 1,
+      "maximum": 20,
+      "description": "Maximum number of upcoming games to display"
+    },
+    "show_favorite_teams_only": {
+      "type": "boolean",
+      "default": true,
+      "description": "Only show games from favorite teams"
+    },
+    "logo_dir": {
+      "type": "string",
+      "default": "assets/sports/soccer_logos",
+      "description": "Directory path for team logos"
+    },
+    "background_service": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable background service for data fetching"
+        },
+        "max_workers": {
+          "type": "integer",
+          "default": 3,
+          "minimum": 1,
+          "maximum": 10,
+          "description": "Maximum number of worker threads"
+        },
+        "request_timeout": {
+          "type": "integer",
+          "default": 30,
+          "minimum": 5,
+          "maximum": 120,
+          "description": "Request timeout in seconds"
+        },
+        "max_retries": {
+          "type": "integer",
+          "default": 3,
+          "minimum": 1,
+          "maximum": 10,
+          "description": "Maximum number of retries for failed requests"
+        },
+        "priority": {
+          "type": "integer",
+          "default": 2,
+          "minimum": 1,
+          "maximum": 5,
+          "description": "Background service priority"
+        }
+      },
+      "additionalProperties": false
     },
     "leagues": {
       "type": "object",
