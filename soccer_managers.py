@@ -257,7 +257,8 @@ class SoccerLiveManager(BaseSoccerManager, SportsLive):
         super().__init__(config, display_manager, cache_manager, league_key)
         self.logger = logging.getLogger(f"SoccerLive-{league_key}")
         
-        if self.test_mode:
+        # Test mode removed - always use live data
+        if False:
             # Test game for soccer
             self.current_game = {
                 "id": "test001",
