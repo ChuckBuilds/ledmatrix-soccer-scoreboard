@@ -100,6 +100,87 @@
       "default": "assets/sports/soccer_logos",
       "description": "Directory path for team logos"
     },
+    "game_display_duration": {
+      "type": "number",
+      "default": 15,
+      "minimum": 3,
+      "maximum": 60,
+      "description": "Duration in seconds to show each individual game before rotating to the next game within the same mode"
+    },
+    "dynamic_duration": {
+      "type": "object",
+      "title": "Dynamic Duration Settings",
+      "description": "Control whether the plugin shows all games before moving to the next mode. Can be configured globally or per-league/per-mode for granular control.",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Global enable for dynamic duration. When enabled, the plugin will show each game once before moving to the next mode, overriding the normal display_duration setting. Can be overridden by per-league or per-mode settings."
+        },
+        "max_duration_seconds": {
+          "type": "number",
+          "default": 300,
+          "minimum": 60,
+          "maximum": 600,
+          "description": "Global maximum time in seconds to wait for all games to be displayed. Can be overridden by per-league settings."
+        },
+        "modes": {
+          "type": "object",
+          "title": "Per-Mode Settings",
+          "description": "Configure dynamic duration for specific modes (live, recent, upcoming). These override global settings.",
+          "properties": {
+            "live": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Enable dynamic duration for live games"
+                },
+                "max_duration_seconds": {
+                  "type": "number",
+                  "minimum": 60,
+                  "maximum": 600,
+                  "description": "Max duration for live games (overrides global)"
+                }
+              }
+            },
+            "recent": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Enable dynamic duration for recent games"
+                },
+                "max_duration_seconds": {
+                  "type": "number",
+                  "minimum": 60,
+                  "maximum": 600,
+                  "description": "Max duration for recent games (overrides global)"
+                }
+              }
+            },
+            "upcoming": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Enable dynamic duration for upcoming games"
+                },
+                "max_duration_seconds": {
+                  "type": "number",
+                  "minimum": 60,
+                  "maximum": 600,
+                  "description": "Max duration for upcoming games (overrides global)"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "background_service": {
       "type": "object",
       "properties": {
@@ -181,19 +262,174 @@
               },
               "additionalProperties": false
             },
-            "recent_games_to_show": {
-              "type": "integer",
-              "default": 5,
-              "minimum": 1,
-              "maximum": 20,
-              "description": "Maximum number of recent Premier League games to display"
+            "live_priority": {
+              "type": "boolean",
+              "default": true,
+              "description": "Give live games priority over other modes. When enabled, live games will interrupt the normal mode rotation and be displayed immediately when available."
             },
-            "upcoming_games_to_show": {
+            "live_game_duration": {
               "type": "integer",
-              "default": 10,
-              "minimum": 1,
-              "maximum": 20,
-              "description": "Maximum number of upcoming Premier League games to display"
+              "default": 20,
+              "minimum": 10,
+              "maximum": 120,
+              "description": "Duration in seconds to display each live game before rotating to the next live game"
+            },
+            "live_update_interval": {
+              "type": "integer",
+              "default": 30,
+              "minimum": 5,
+              "maximum": 300,
+              "description": "How often to update live game data (seconds)"
+            },
+            "update_interval_seconds": {
+              "type": "integer",
+              "default": 3600,
+              "minimum": 30,
+              "maximum": 86400,
+              "description": "How often to fetch new data (seconds)"
+            },
+            "game_limits": {
+              "type": "object",
+              "title": "Game Limits",
+              "description": "Control how many games to show",
+              "properties": {
+                "recent_games_to_show": {
+                  "type": "integer",
+                  "default": 5,
+                  "minimum": 1,
+                  "maximum": 20,
+                  "description": "With favorite teams: Number of recent games PER team (e.g., 1 with 2 teams = 2 games). Without favorite teams: Total number of most recent games to show (e.g., 5 = show 5 most recent games total)."
+                },
+                "upcoming_games_to_show": {
+                  "type": "integer",
+                  "default": 1,
+                  "minimum": 1,
+                  "maximum": 20,
+                  "description": "With favorite teams: Number of upcoming games PER team (e.g., 2 with 3 teams = up to 6 games). Without favorite teams: Total number of next upcoming games to show (e.g., 1 = show only the next 1 game total)."
+                }
+              }
+            },
+            "display_options": {
+              "type": "object",
+              "title": "Display Options",
+              "description": "Additional information to show",
+              "properties": {
+                "show_records": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Show team records (wins-losses)"
+                },
+                "show_ranking": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Show team rankings (when available)"
+                },
+                "show_odds": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "Show betting odds"
+                }
+              }
+            },
+            "filtering": {
+              "type": "object",
+              "title": "Filtering Options",
+              "description": "Control which teams are shown",
+              "properties": {
+                "show_favorite_teams_only": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "Only show games from favorite teams"
+                },
+                "show_all_live": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Show all live games, not just favorites"
+                }
+              }
+            },
+            "logo_dir": {
+              "type": "string",
+              "default": "assets/sports/soccer_logos",
+              "description": "Directory path for team logos"
+            },
+            "test_mode": {
+              "type": "boolean",
+              "default": false,
+              "description": "Enable test mode for development"
+            },
+            "dynamic_duration": {
+              "type": "object",
+              "title": "Premier League Dynamic Duration Settings",
+              "description": "Override global dynamic duration settings for Premier League games. If not set, uses global settings.",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Enable dynamic duration for Premier League games (overrides global setting)"
+                },
+                "max_duration_seconds": {
+                  "type": "number",
+                  "minimum": 60,
+                  "maximum": 600,
+                  "description": "Max duration for Premier League games (overrides global setting)"
+                },
+                "modes": {
+                  "type": "object",
+                  "title": "Per-Mode Settings for Premier League",
+                  "description": "Configure dynamic duration for specific Premier League modes",
+                  "properties": {
+                    "live": {
+                      "type": "object",
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean",
+                          "default": false,
+                          "description": "Enable dynamic duration for Premier League live games"
+                        },
+                        "max_duration_seconds": {
+                          "type": "number",
+                          "minimum": 60,
+                          "maximum": 600,
+                          "description": "Max duration for Premier League live games"
+                        }
+                      }
+                    },
+                    "recent": {
+                      "type": "object",
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean",
+                          "default": false,
+                          "description": "Enable dynamic duration for Premier League recent games"
+                        },
+                        "max_duration_seconds": {
+                          "type": "number",
+                          "minimum": 60,
+                          "maximum": 600,
+                          "description": "Max duration for Premier League recent games"
+                        }
+                      }
+                    },
+                    "upcoming": {
+                      "type": "object",
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean",
+                          "default": false,
+                          "description": "Enable dynamic duration for Premier League upcoming games"
+                        },
+                        "max_duration_seconds": {
+                          "type": "number",
+                          "minimum": 60,
+                          "maximum": 600,
+                          "description": "Max duration for Premier League upcoming games"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
             }
           },
           "additionalProperties": false
@@ -237,19 +473,174 @@
               },
               "additionalProperties": false
             },
-            "recent_games_to_show": {
-              "type": "integer",
-              "default": 5,
-              "minimum": 1,
-              "maximum": 20,
-              "description": "Maximum number of recent La Liga games to display"
+            "live_priority": {
+              "type": "boolean",
+              "default": true,
+              "description": "Give live games priority over other modes. When enabled, live games will interrupt the normal mode rotation and be displayed immediately when available."
             },
-            "upcoming_games_to_show": {
+            "live_game_duration": {
               "type": "integer",
-              "default": 10,
-              "minimum": 1,
-              "maximum": 20,
-              "description": "Maximum number of upcoming La Liga games to display"
+              "default": 20,
+              "minimum": 10,
+              "maximum": 120,
+              "description": "Duration in seconds to display each live game before rotating to the next live game"
+            },
+            "live_update_interval": {
+              "type": "integer",
+              "default": 30,
+              "minimum": 5,
+              "maximum": 300,
+              "description": "How often to update live game data (seconds)"
+            },
+            "update_interval_seconds": {
+              "type": "integer",
+              "default": 3600,
+              "minimum": 30,
+              "maximum": 86400,
+              "description": "How often to fetch new data (seconds)"
+            },
+            "game_limits": {
+              "type": "object",
+              "title": "Game Limits",
+              "description": "Control how many games to show",
+              "properties": {
+                "recent_games_to_show": {
+                  "type": "integer",
+                  "default": 5,
+                  "minimum": 1,
+                  "maximum": 20,
+                  "description": "With favorite teams: Number of recent games PER team (e.g., 1 with 2 teams = 2 games). Without favorite teams: Total number of most recent games to show (e.g., 5 = show 5 most recent games total)."
+                },
+                "upcoming_games_to_show": {
+                  "type": "integer",
+                  "default": 1,
+                  "minimum": 1,
+                  "maximum": 20,
+                  "description": "With favorite teams: Number of upcoming games PER team (e.g., 2 with 3 teams = up to 6 games). Without favorite teams: Total number of next upcoming games to show (e.g., 1 = show only the next 1 game total)."
+                }
+              }
+            },
+            "display_options": {
+              "type": "object",
+              "title": "Display Options",
+              "description": "Additional information to show",
+              "properties": {
+                "show_records": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Show team records (wins-losses)"
+                },
+                "show_ranking": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Show team rankings (when available)"
+                },
+                "show_odds": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "Show betting odds"
+                }
+              }
+            },
+            "filtering": {
+              "type": "object",
+              "title": "Filtering Options",
+              "description": "Control which teams are shown",
+              "properties": {
+                "show_favorite_teams_only": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "Only show games from favorite teams"
+                },
+                "show_all_live": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Show all live games, not just favorites"
+                }
+              }
+            },
+            "logo_dir": {
+              "type": "string",
+              "default": "assets/sports/soccer_logos",
+              "description": "Directory path for team logos"
+            },
+            "test_mode": {
+              "type": "boolean",
+              "default": false,
+              "description": "Enable test mode for development"
+            },
+            "dynamic_duration": {
+              "type": "object",
+              "title": "La Liga Dynamic Duration Settings",
+              "description": "Override global dynamic duration settings for La Liga games. If not set, uses global settings.",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Enable dynamic duration for La Liga games (overrides global setting)"
+                },
+                "max_duration_seconds": {
+                  "type": "number",
+                  "minimum": 60,
+                  "maximum": 600,
+                  "description": "Max duration for La Liga games (overrides global setting)"
+                },
+                "modes": {
+                  "type": "object",
+                  "title": "Per-Mode Settings for La Liga",
+                  "description": "Configure dynamic duration for specific La Liga modes",
+                  "properties": {
+                    "live": {
+                      "type": "object",
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean",
+                          "default": false,
+                          "description": "Enable dynamic duration for La Liga live games"
+                        },
+                        "max_duration_seconds": {
+                          "type": "number",
+                          "minimum": 60,
+                          "maximum": 600,
+                          "description": "Max duration for La Liga live games"
+                        }
+                      }
+                    },
+                    "recent": {
+                      "type": "object",
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean",
+                          "default": false,
+                          "description": "Enable dynamic duration for La Liga recent games"
+                        },
+                        "max_duration_seconds": {
+                          "type": "number",
+                          "minimum": 60,
+                          "maximum": 600,
+                          "description": "Max duration for La Liga recent games"
+                        }
+                      }
+                    },
+                    "upcoming": {
+                      "type": "object",
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean",
+                          "default": false,
+                          "description": "Enable dynamic duration for La Liga upcoming games"
+                        },
+                        "max_duration_seconds": {
+                          "type": "number",
+                          "minimum": 60,
+                          "maximum": 600,
+                          "description": "Max duration for La Liga upcoming games"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
             }
           },
           "additionalProperties": false
@@ -293,19 +684,174 @@
               },
               "additionalProperties": false
             },
-            "recent_games_to_show": {
-              "type": "integer",
-              "default": 5,
-              "minimum": 1,
-              "maximum": 20,
-              "description": "Maximum number of recent Bundesliga games to display"
+            "live_priority": {
+              "type": "boolean",
+              "default": true,
+              "description": "Give live games priority over other modes. When enabled, live games will interrupt the normal mode rotation and be displayed immediately when available."
             },
-            "upcoming_games_to_show": {
+            "live_game_duration": {
               "type": "integer",
-              "default": 10,
-              "minimum": 1,
-              "maximum": 20,
-              "description": "Maximum number of upcoming Bundesliga games to display"
+              "default": 20,
+              "minimum": 10,
+              "maximum": 120,
+              "description": "Duration in seconds to display each live game before rotating to the next live game"
+            },
+            "live_update_interval": {
+              "type": "integer",
+              "default": 30,
+              "minimum": 5,
+              "maximum": 300,
+              "description": "How often to update live game data (seconds)"
+            },
+            "update_interval_seconds": {
+              "type": "integer",
+              "default": 3600,
+              "minimum": 30,
+              "maximum": 86400,
+              "description": "How often to fetch new data (seconds)"
+            },
+            "game_limits": {
+              "type": "object",
+              "title": "Game Limits",
+              "description": "Control how many games to show",
+              "properties": {
+                "recent_games_to_show": {
+                  "type": "integer",
+                  "default": 5,
+                  "minimum": 1,
+                  "maximum": 20,
+                  "description": "With favorite teams: Number of recent games PER team (e.g., 1 with 2 teams = 2 games). Without favorite teams: Total number of most recent games to show (e.g., 5 = show 5 most recent games total)."
+                },
+                "upcoming_games_to_show": {
+                  "type": "integer",
+                  "default": 1,
+                  "minimum": 1,
+                  "maximum": 20,
+                  "description": "With favorite teams: Number of upcoming games PER team (e.g., 2 with 3 teams = up to 6 games). Without favorite teams: Total number of next upcoming games to show (e.g., 1 = show only the next 1 game total)."
+                }
+              }
+            },
+            "display_options": {
+              "type": "object",
+              "title": "Display Options",
+              "description": "Additional information to show",
+              "properties": {
+                "show_records": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Show team records (wins-losses)"
+                },
+                "show_ranking": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Show team rankings (when available)"
+                },
+                "show_odds": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "Show betting odds"
+                }
+              }
+            },
+            "filtering": {
+              "type": "object",
+              "title": "Filtering Options",
+              "description": "Control which teams are shown",
+              "properties": {
+                "show_favorite_teams_only": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "Only show games from favorite teams"
+                },
+                "show_all_live": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Show all live games, not just favorites"
+                }
+              }
+            },
+            "logo_dir": {
+              "type": "string",
+              "default": "assets/sports/soccer_logos",
+              "description": "Directory path for team logos"
+            },
+            "test_mode": {
+              "type": "boolean",
+              "default": false,
+              "description": "Enable test mode for development"
+            },
+            "dynamic_duration": {
+              "type": "object",
+              "title": "Bundesliga Dynamic Duration Settings",
+              "description": "Override global dynamic duration settings for Bundesliga games. If not set, uses global settings.",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Enable dynamic duration for Bundesliga games (overrides global setting)"
+                },
+                "max_duration_seconds": {
+                  "type": "number",
+                  "minimum": 60,
+                  "maximum": 600,
+                  "description": "Max duration for Bundesliga games (overrides global setting)"
+                },
+                "modes": {
+                  "type": "object",
+                  "title": "Per-Mode Settings for Bundesliga",
+                  "description": "Configure dynamic duration for specific Bundesliga modes",
+                  "properties": {
+                    "live": {
+                      "type": "object",
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean",
+                          "default": false,
+                          "description": "Enable dynamic duration for Bundesliga live games"
+                        },
+                        "max_duration_seconds": {
+                          "type": "number",
+                          "minimum": 60,
+                          "maximum": 600,
+                          "description": "Max duration for Bundesliga live games"
+                        }
+                      }
+                    },
+                    "recent": {
+                      "type": "object",
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean",
+                          "default": false,
+                          "description": "Enable dynamic duration for Bundesliga recent games"
+                        },
+                        "max_duration_seconds": {
+                          "type": "number",
+                          "minimum": 60,
+                          "maximum": 600,
+                          "description": "Max duration for Bundesliga recent games"
+                        }
+                      }
+                    },
+                    "upcoming": {
+                      "type": "object",
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean",
+                          "default": false,
+                          "description": "Enable dynamic duration for Bundesliga upcoming games"
+                        },
+                        "max_duration_seconds": {
+                          "type": "number",
+                          "minimum": 60,
+                          "maximum": 600,
+                          "description": "Max duration for Bundesliga upcoming games"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
             }
           },
           "additionalProperties": false
@@ -349,19 +895,174 @@
               },
               "additionalProperties": false
             },
-            "recent_games_to_show": {
-              "type": "integer",
-              "default": 5,
-              "minimum": 1,
-              "maximum": 20,
-              "description": "Maximum number of recent Serie A games to display"
+            "live_priority": {
+              "type": "boolean",
+              "default": true,
+              "description": "Give live games priority over other modes. When enabled, live games will interrupt the normal mode rotation and be displayed immediately when available."
             },
-            "upcoming_games_to_show": {
+            "live_game_duration": {
               "type": "integer",
-              "default": 10,
-              "minimum": 1,
-              "maximum": 20,
-              "description": "Maximum number of upcoming Serie A games to display"
+              "default": 20,
+              "minimum": 10,
+              "maximum": 120,
+              "description": "Duration in seconds to display each live game before rotating to the next live game"
+            },
+            "live_update_interval": {
+              "type": "integer",
+              "default": 30,
+              "minimum": 5,
+              "maximum": 300,
+              "description": "How often to update live game data (seconds)"
+            },
+            "update_interval_seconds": {
+              "type": "integer",
+              "default": 3600,
+              "minimum": 30,
+              "maximum": 86400,
+              "description": "How often to fetch new data (seconds)"
+            },
+            "game_limits": {
+              "type": "object",
+              "title": "Game Limits",
+              "description": "Control how many games to show",
+              "properties": {
+                "recent_games_to_show": {
+                  "type": "integer",
+                  "default": 5,
+                  "minimum": 1,
+                  "maximum": 20,
+                  "description": "With favorite teams: Number of recent games PER team (e.g., 1 with 2 teams = 2 games). Without favorite teams: Total number of most recent games to show (e.g., 5 = show 5 most recent games total)."
+                },
+                "upcoming_games_to_show": {
+                  "type": "integer",
+                  "default": 1,
+                  "minimum": 1,
+                  "maximum": 20,
+                  "description": "With favorite teams: Number of upcoming games PER team (e.g., 2 with 3 teams = up to 6 games). Without favorite teams: Total number of next upcoming games to show (e.g., 1 = show only the next 1 game total)."
+                }
+              }
+            },
+            "display_options": {
+              "type": "object",
+              "title": "Display Options",
+              "description": "Additional information to show",
+              "properties": {
+                "show_records": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Show team records (wins-losses)"
+                },
+                "show_ranking": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Show team rankings (when available)"
+                },
+                "show_odds": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "Show betting odds"
+                }
+              }
+            },
+            "filtering": {
+              "type": "object",
+              "title": "Filtering Options",
+              "description": "Control which teams are shown",
+              "properties": {
+                "show_favorite_teams_only": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "Only show games from favorite teams"
+                },
+                "show_all_live": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Show all live games, not just favorites"
+                }
+              }
+            },
+            "logo_dir": {
+              "type": "string",
+              "default": "assets/sports/soccer_logos",
+              "description": "Directory path for team logos"
+            },
+            "test_mode": {
+              "type": "boolean",
+              "default": false,
+              "description": "Enable test mode for development"
+            },
+            "dynamic_duration": {
+              "type": "object",
+              "title": "Serie A Dynamic Duration Settings",
+              "description": "Override global dynamic duration settings for Serie A games. If not set, uses global settings.",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Enable dynamic duration for Serie A games (overrides global setting)"
+                },
+                "max_duration_seconds": {
+                  "type": "number",
+                  "minimum": 60,
+                  "maximum": 600,
+                  "description": "Max duration for Serie A games (overrides global setting)"
+                },
+                "modes": {
+                  "type": "object",
+                  "title": "Per-Mode Settings for Serie A",
+                  "description": "Configure dynamic duration for specific Serie A modes",
+                  "properties": {
+                    "live": {
+                      "type": "object",
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean",
+                          "default": false,
+                          "description": "Enable dynamic duration for Serie A live games"
+                        },
+                        "max_duration_seconds": {
+                          "type": "number",
+                          "minimum": 60,
+                          "maximum": 600,
+                          "description": "Max duration for Serie A live games"
+                        }
+                      }
+                    },
+                    "recent": {
+                      "type": "object",
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean",
+                          "default": false,
+                          "description": "Enable dynamic duration for Serie A recent games"
+                        },
+                        "max_duration_seconds": {
+                          "type": "number",
+                          "minimum": 60,
+                          "maximum": 600,
+                          "description": "Max duration for Serie A recent games"
+                        }
+                      }
+                    },
+                    "upcoming": {
+                      "type": "object",
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean",
+                          "default": false,
+                          "description": "Enable dynamic duration for Serie A upcoming games"
+                        },
+                        "max_duration_seconds": {
+                          "type": "number",
+                          "minimum": 60,
+                          "maximum": 600,
+                          "description": "Max duration for Serie A upcoming games"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
             }
           },
           "additionalProperties": false
@@ -405,19 +1106,174 @@
               },
               "additionalProperties": false
             },
-            "recent_games_to_show": {
-              "type": "integer",
-              "default": 5,
-              "minimum": 1,
-              "maximum": 20,
-              "description": "Maximum number of recent Ligue 1 games to display"
+            "live_priority": {
+              "type": "boolean",
+              "default": true,
+              "description": "Give live games priority over other modes. When enabled, live games will interrupt the normal mode rotation and be displayed immediately when available."
             },
-            "upcoming_games_to_show": {
+            "live_game_duration": {
               "type": "integer",
-              "default": 10,
-              "minimum": 1,
-              "maximum": 20,
-              "description": "Maximum number of upcoming Ligue 1 games to display"
+              "default": 20,
+              "minimum": 10,
+              "maximum": 120,
+              "description": "Duration in seconds to display each live game before rotating to the next live game"
+            },
+            "live_update_interval": {
+              "type": "integer",
+              "default": 30,
+              "minimum": 5,
+              "maximum": 300,
+              "description": "How often to update live game data (seconds)"
+            },
+            "update_interval_seconds": {
+              "type": "integer",
+              "default": 3600,
+              "minimum": 30,
+              "maximum": 86400,
+              "description": "How often to fetch new data (seconds)"
+            },
+            "game_limits": {
+              "type": "object",
+              "title": "Game Limits",
+              "description": "Control how many games to show",
+              "properties": {
+                "recent_games_to_show": {
+                  "type": "integer",
+                  "default": 5,
+                  "minimum": 1,
+                  "maximum": 20,
+                  "description": "With favorite teams: Number of recent games PER team (e.g., 1 with 2 teams = 2 games). Without favorite teams: Total number of most recent games to show (e.g., 5 = show 5 most recent games total)."
+                },
+                "upcoming_games_to_show": {
+                  "type": "integer",
+                  "default": 1,
+                  "minimum": 1,
+                  "maximum": 20,
+                  "description": "With favorite teams: Number of upcoming games PER team (e.g., 2 with 3 teams = up to 6 games). Without favorite teams: Total number of next upcoming games to show (e.g., 1 = show only the next 1 game total)."
+                }
+              }
+            },
+            "display_options": {
+              "type": "object",
+              "title": "Display Options",
+              "description": "Additional information to show",
+              "properties": {
+                "show_records": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Show team records (wins-losses)"
+                },
+                "show_ranking": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Show team rankings (when available)"
+                },
+                "show_odds": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "Show betting odds"
+                }
+              }
+            },
+            "filtering": {
+              "type": "object",
+              "title": "Filtering Options",
+              "description": "Control which teams are shown",
+              "properties": {
+                "show_favorite_teams_only": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "Only show games from favorite teams"
+                },
+                "show_all_live": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Show all live games, not just favorites"
+                }
+              }
+            },
+            "logo_dir": {
+              "type": "string",
+              "default": "assets/sports/soccer_logos",
+              "description": "Directory path for team logos"
+            },
+            "test_mode": {
+              "type": "boolean",
+              "default": false,
+              "description": "Enable test mode for development"
+            },
+            "dynamic_duration": {
+              "type": "object",
+              "title": "Ligue 1 Dynamic Duration Settings",
+              "description": "Override global dynamic duration settings for Ligue 1 games. If not set, uses global settings.",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Enable dynamic duration for Ligue 1 games (overrides global setting)"
+                },
+                "max_duration_seconds": {
+                  "type": "number",
+                  "minimum": 60,
+                  "maximum": 600,
+                  "description": "Max duration for Ligue 1 games (overrides global setting)"
+                },
+                "modes": {
+                  "type": "object",
+                  "title": "Per-Mode Settings for Ligue 1",
+                  "description": "Configure dynamic duration for specific Ligue 1 modes",
+                  "properties": {
+                    "live": {
+                      "type": "object",
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean",
+                          "default": false,
+                          "description": "Enable dynamic duration for Ligue 1 live games"
+                        },
+                        "max_duration_seconds": {
+                          "type": "number",
+                          "minimum": 60,
+                          "maximum": 600,
+                          "description": "Max duration for Ligue 1 live games"
+                        }
+                      }
+                    },
+                    "recent": {
+                      "type": "object",
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean",
+                          "default": false,
+                          "description": "Enable dynamic duration for Ligue 1 recent games"
+                        },
+                        "max_duration_seconds": {
+                          "type": "number",
+                          "minimum": 60,
+                          "maximum": 600,
+                          "description": "Max duration for Ligue 1 recent games"
+                        }
+                      }
+                    },
+                    "upcoming": {
+                      "type": "object",
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean",
+                          "default": false,
+                          "description": "Enable dynamic duration for Ligue 1 upcoming games"
+                        },
+                        "max_duration_seconds": {
+                          "type": "number",
+                          "minimum": 60,
+                          "maximum": 600,
+                          "description": "Max duration for Ligue 1 upcoming games"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
             }
           },
           "additionalProperties": false
@@ -461,19 +1317,596 @@
               },
               "additionalProperties": false
             },
-            "recent_games_to_show": {
-              "type": "integer",
-              "default": 5,
-              "minimum": 1,
-              "maximum": 20,
-              "description": "Maximum number of recent MLS games to display"
+            "live_priority": {
+              "type": "boolean",
+              "default": true,
+              "description": "Give live games priority over other modes. When enabled, live games will interrupt the normal mode rotation and be displayed immediately when available."
             },
-            "upcoming_games_to_show": {
+            "live_game_duration": {
               "type": "integer",
-              "default": 10,
-              "minimum": 1,
-              "maximum": 20,
-              "description": "Maximum number of upcoming MLS games to display"
+              "default": 20,
+              "minimum": 10,
+              "maximum": 120,
+              "description": "Duration in seconds to display each live game before rotating to the next live game"
+            },
+            "live_update_interval": {
+              "type": "integer",
+              "default": 30,
+              "minimum": 5,
+              "maximum": 300,
+              "description": "How often to update live game data (seconds)"
+            },
+            "update_interval_seconds": {
+              "type": "integer",
+              "default": 3600,
+              "minimum": 30,
+              "maximum": 86400,
+              "description": "How often to fetch new data (seconds)"
+            },
+            "game_limits": {
+              "type": "object",
+              "title": "Game Limits",
+              "description": "Control how many games to show",
+              "properties": {
+                "recent_games_to_show": {
+                  "type": "integer",
+                  "default": 5,
+                  "minimum": 1,
+                  "maximum": 20,
+                  "description": "With favorite teams: Number of recent games PER team (e.g., 1 with 2 teams = 2 games). Without favorite teams: Total number of most recent games to show (e.g., 5 = show 5 most recent games total)."
+                },
+                "upcoming_games_to_show": {
+                  "type": "integer",
+                  "default": 1,
+                  "minimum": 1,
+                  "maximum": 20,
+                  "description": "With favorite teams: Number of upcoming games PER team (e.g., 2 with 3 teams = up to 6 games). Without favorite teams: Total number of next upcoming games to show (e.g., 1 = show only the next 1 game total)."
+                }
+              }
+            },
+            "display_options": {
+              "type": "object",
+              "title": "Display Options",
+              "description": "Additional information to show",
+              "properties": {
+                "show_records": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Show team records (wins-losses)"
+                },
+                "show_ranking": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Show team rankings (when available)"
+                },
+                "show_odds": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "Show betting odds"
+                }
+              }
+            },
+            "filtering": {
+              "type": "object",
+              "title": "Filtering Options",
+              "description": "Control which teams are shown",
+              "properties": {
+                "show_favorite_teams_only": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "Only show games from favorite teams"
+                },
+                "show_all_live": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Show all live games, not just favorites"
+                }
+              }
+            },
+            "logo_dir": {
+              "type": "string",
+              "default": "assets/sports/soccer_logos",
+              "description": "Directory path for team logos"
+            },
+            "test_mode": {
+              "type": "boolean",
+              "default": false,
+              "description": "Enable test mode for development"
+            },
+            "dynamic_duration": {
+              "type": "object",
+              "title": "MLS Dynamic Duration Settings",
+              "description": "Override global dynamic duration settings for MLS games. If not set, uses global settings.",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Enable dynamic duration for MLS games (overrides global setting)"
+                },
+                "max_duration_seconds": {
+                  "type": "number",
+                  "minimum": 60,
+                  "maximum": 600,
+                  "description": "Max duration for MLS games (overrides global setting)"
+                },
+                "modes": {
+                  "type": "object",
+                  "title": "Per-Mode Settings for MLS",
+                  "description": "Configure dynamic duration for specific MLS modes",
+                  "properties": {
+                    "live": {
+                      "type": "object",
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean",
+                          "default": false,
+                          "description": "Enable dynamic duration for MLS live games"
+                        },
+                        "max_duration_seconds": {
+                          "type": "number",
+                          "minimum": 60,
+                          "maximum": 600,
+                          "description": "Max duration for MLS live games"
+                        }
+                      }
+                    },
+                    "recent": {
+                      "type": "object",
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean",
+                          "default": false,
+                          "description": "Enable dynamic duration for MLS recent games"
+                        },
+                        "max_duration_seconds": {
+                          "type": "number",
+                          "minimum": 60,
+                          "maximum": 600,
+                          "description": "Max duration for MLS recent games"
+                        }
+                      }
+                    },
+                    "upcoming": {
+                      "type": "object",
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean",
+                          "default": false,
+                          "description": "Enable dynamic duration for MLS upcoming games"
+                        },
+                        "max_duration_seconds": {
+                          "type": "number",
+                          "minimum": 60,
+                          "maximum": 600,
+                          "description": "Max duration for MLS upcoming games"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "uefa.champions": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": false,
+              "description": "Enable Champions League games"
+            },
+            "favorite_teams": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "description": "Champions League team name or abbreviation"
+              },
+              "uniqueItems": true,
+              "maxItems": 32,
+              "description": "List of favorite Champions League teams to prioritize"
+            },
+            "display_modes": {
+              "type": "object",
+              "properties": {
+                "live": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "Show live Champions League games"
+                },
+                "recent": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "Show recently completed Champions League games"
+                },
+                "upcoming": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "Show upcoming Champions League games"
+                }
+              },
+              "additionalProperties": false
+            },
+            "live_priority": {
+              "type": "boolean",
+              "default": true,
+              "description": "Give live games priority over other modes. When enabled, live games will interrupt the normal mode rotation and be displayed immediately when available."
+            },
+            "live_game_duration": {
+              "type": "integer",
+              "default": 20,
+              "minimum": 10,
+              "maximum": 120,
+              "description": "Duration in seconds to display each live game before rotating to the next live game"
+            },
+            "live_update_interval": {
+              "type": "integer",
+              "default": 30,
+              "minimum": 5,
+              "maximum": 300,
+              "description": "How often to update live game data (seconds)"
+            },
+            "update_interval_seconds": {
+              "type": "integer",
+              "default": 3600,
+              "minimum": 30,
+              "maximum": 86400,
+              "description": "How often to fetch new data (seconds)"
+            },
+            "game_limits": {
+              "type": "object",
+              "title": "Game Limits",
+              "description": "Control how many games to show",
+              "properties": {
+                "recent_games_to_show": {
+                  "type": "integer",
+                  "default": 5,
+                  "minimum": 1,
+                  "maximum": 20,
+                  "description": "With favorite teams: Number of recent games PER team (e.g., 1 with 2 teams = 2 games). Without favorite teams: Total number of most recent games to show (e.g., 5 = show 5 most recent games total)."
+                },
+                "upcoming_games_to_show": {
+                  "type": "integer",
+                  "default": 1,
+                  "minimum": 1,
+                  "maximum": 20,
+                  "description": "With favorite teams: Number of upcoming games PER team (e.g., 2 with 3 teams = up to 6 games). Without favorite teams: Total number of next upcoming games to show (e.g., 1 = show only the next 1 game total)."
+                }
+              }
+            },
+            "display_options": {
+              "type": "object",
+              "title": "Display Options",
+              "description": "Additional information to show",
+              "properties": {
+                "show_records": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Show team records (wins-losses)"
+                },
+                "show_ranking": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Show team rankings (when available)"
+                },
+                "show_odds": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "Show betting odds"
+                }
+              }
+            },
+            "filtering": {
+              "type": "object",
+              "title": "Filtering Options",
+              "description": "Control which teams are shown",
+              "properties": {
+                "show_favorite_teams_only": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "Only show games from favorite teams"
+                },
+                "show_all_live": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Show all live games, not just favorites"
+                }
+              }
+            },
+            "logo_dir": {
+              "type": "string",
+              "default": "assets/sports/soccer_logos",
+              "description": "Directory path for team logos"
+            },
+            "test_mode": {
+              "type": "boolean",
+              "default": false,
+              "description": "Enable test mode for development"
+            },
+            "dynamic_duration": {
+              "type": "object",
+              "title": "Champions League Dynamic Duration Settings",
+              "description": "Override global dynamic duration settings for Champions League games. If not set, uses global settings.",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Enable dynamic duration for Champions League games (overrides global setting)"
+                },
+                "max_duration_seconds": {
+                  "type": "number",
+                  "minimum": 60,
+                  "maximum": 600,
+                  "description": "Max duration for Champions League games (overrides global setting)"
+                },
+                "modes": {
+                  "type": "object",
+                  "title": "Per-Mode Settings for Champions League",
+                  "description": "Configure dynamic duration for specific Champions League modes",
+                  "properties": {
+                    "live": {
+                      "type": "object",
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean",
+                          "default": false,
+                          "description": "Enable dynamic duration for Champions League live games"
+                        },
+                        "max_duration_seconds": {
+                          "type": "number",
+                          "minimum": 60,
+                          "maximum": 600,
+                          "description": "Max duration for Champions League live games"
+                        }
+                      }
+                    },
+                    "recent": {
+                      "type": "object",
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean",
+                          "default": false,
+                          "description": "Enable dynamic duration for Champions League recent games"
+                        },
+                        "max_duration_seconds": {
+                          "type": "number",
+                          "minimum": 60,
+                          "maximum": 600,
+                          "description": "Max duration for Champions League recent games"
+                        }
+                      }
+                    },
+                    "upcoming": {
+                      "type": "object",
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean",
+                          "default": false,
+                          "description": "Enable dynamic duration for Champions League upcoming games"
+                        },
+                        "max_duration_seconds": {
+                          "type": "number",
+                          "minimum": 60,
+                          "maximum": 600,
+                          "description": "Max duration for Champions League upcoming games"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "uefa.europa": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": false,
+              "description": "Enable Europa League games"
+            },
+            "favorite_teams": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "description": "Europa League team name or abbreviation"
+              },
+              "uniqueItems": true,
+              "maxItems": 32,
+              "description": "List of favorite Europa League teams to prioritize"
+            },
+            "display_modes": {
+              "type": "object",
+              "properties": {
+                "live": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "Show live Europa League games"
+                },
+                "recent": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "Show recently completed Europa League games"
+                },
+                "upcoming": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "Show upcoming Europa League games"
+                }
+              },
+              "additionalProperties": false
+            },
+            "live_priority": {
+              "type": "boolean",
+              "default": true,
+              "description": "Give live games priority over other modes. When enabled, live games will interrupt the normal mode rotation and be displayed immediately when available."
+            },
+            "live_game_duration": {
+              "type": "integer",
+              "default": 20,
+              "minimum": 10,
+              "maximum": 120,
+              "description": "Duration in seconds to display each live game before rotating to the next live game"
+            },
+            "live_update_interval": {
+              "type": "integer",
+              "default": 30,
+              "minimum": 5,
+              "maximum": 300,
+              "description": "How often to update live game data (seconds)"
+            },
+            "update_interval_seconds": {
+              "type": "integer",
+              "default": 3600,
+              "minimum": 30,
+              "maximum": 86400,
+              "description": "How often to fetch new data (seconds)"
+            },
+            "game_limits": {
+              "type": "object",
+              "title": "Game Limits",
+              "description": "Control how many games to show",
+              "properties": {
+                "recent_games_to_show": {
+                  "type": "integer",
+                  "default": 5,
+                  "minimum": 1,
+                  "maximum": 20,
+                  "description": "With favorite teams: Number of recent games PER team (e.g., 1 with 2 teams = 2 games). Without favorite teams: Total number of most recent games to show (e.g., 5 = show 5 most recent games total)."
+                },
+                "upcoming_games_to_show": {
+                  "type": "integer",
+                  "default": 1,
+                  "minimum": 1,
+                  "maximum": 20,
+                  "description": "With favorite teams: Number of upcoming games PER team (e.g., 2 with 3 teams = up to 6 games). Without favorite teams: Total number of next upcoming games to show (e.g., 1 = show only the next 1 game total)."
+                }
+              }
+            },
+            "display_options": {
+              "type": "object",
+              "title": "Display Options",
+              "description": "Additional information to show",
+              "properties": {
+                "show_records": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Show team records (wins-losses)"
+                },
+                "show_ranking": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Show team rankings (when available)"
+                },
+                "show_odds": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "Show betting odds"
+                }
+              }
+            },
+            "filtering": {
+              "type": "object",
+              "title": "Filtering Options",
+              "description": "Control which teams are shown",
+              "properties": {
+                "show_favorite_teams_only": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "Only show games from favorite teams"
+                },
+                "show_all_live": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Show all live games, not just favorites"
+                }
+              }
+            },
+            "logo_dir": {
+              "type": "string",
+              "default": "assets/sports/soccer_logos",
+              "description": "Directory path for team logos"
+            },
+            "test_mode": {
+              "type": "boolean",
+              "default": false,
+              "description": "Enable test mode for development"
+            },
+            "dynamic_duration": {
+              "type": "object",
+              "title": "Europa League Dynamic Duration Settings",
+              "description": "Override global dynamic duration settings for Europa League games. If not set, uses global settings.",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Enable dynamic duration for Europa League games (overrides global setting)"
+                },
+                "max_duration_seconds": {
+                  "type": "number",
+                  "minimum": 60,
+                  "maximum": 600,
+                  "description": "Max duration for Europa League games (overrides global setting)"
+                },
+                "modes": {
+                  "type": "object",
+                  "title": "Per-Mode Settings for Europa League",
+                  "description": "Configure dynamic duration for specific Europa League modes",
+                  "properties": {
+                    "live": {
+                      "type": "object",
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean",
+                          "default": false,
+                          "description": "Enable dynamic duration for Europa League live games"
+                        },
+                        "max_duration_seconds": {
+                          "type": "number",
+                          "minimum": 60,
+                          "maximum": 600,
+                          "description": "Max duration for Europa League live games"
+                        }
+                      }
+                    },
+                    "recent": {
+                      "type": "object",
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean",
+                          "default": false,
+                          "description": "Enable dynamic duration for Europa League recent games"
+                        },
+                        "max_duration_seconds": {
+                          "type": "number",
+                          "minimum": 60,
+                          "maximum": 600,
+                          "description": "Max duration for Europa League recent games"
+                        }
+                      }
+                    },
+                    "upcoming": {
+                      "type": "object",
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean",
+                          "default": false,
+                          "description": "Enable dynamic duration for Europa League upcoming games"
+                        },
+                        "max_duration_seconds": {
+                          "type": "number",
+                          "minimum": 60,
+                          "maximum": 600,
+                          "description": "Max duration for Europa League upcoming games"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
             }
           },
           "additionalProperties": false
