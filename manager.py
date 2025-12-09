@@ -423,6 +423,107 @@ class SoccerScoreboardPlugin(BasePlugin if BasePlugin else object):
             # If display_mode is provided, use it to determine which manager to call
             if display_mode:
                 self.logger.debug(f"Display called with mode: {display_mode}")
+                
+                # Handle registered plugin mode names (soccer_live, soccer_recent, soccer_upcoming)
+                if display_mode in ["soccer_live", "soccer_recent", "soccer_upcoming"]:
+                    mode_type = display_mode.replace("soccer_", "")
+                    # Route to all enabled leagues for this mode type
+                    # For live mode, prioritize leagues with live content and live_priority enabled
+                    managers_to_try = []
+                    
+                    for league_key in LEAGUE_KEYS:
+                        if not self.league_enabled.get(league_key, False):
+                            continue
+                        
+                        # For live mode, check if league has live priority and live content
+                        if mode_type == 'live':
+                            if not self.league_live_priority.get(league_key, False):
+                                continue
+                            
+                            # Get live manager for this league
+                            live_manager_attr = None
+                            if league_key == 'eng.1':
+                                live_manager_attr = 'eng1_live'
+                            elif league_key == 'esp.1':
+                                live_manager_attr = 'esp1_live'
+                            elif league_key == 'ger.1':
+                                live_manager_attr = 'ger1_live'
+                            elif league_key == 'ita.1':
+                                live_manager_attr = 'ita1_live'
+                            elif league_key == 'fra.1':
+                                live_manager_attr = 'fra1_live'
+                            elif league_key == 'usa.1':
+                                live_manager_attr = 'usa1_live'
+                            elif league_key == 'uefa.champions':
+                                live_manager_attr = 'champions_live'
+                            elif league_key == 'uefa.europa':
+                                live_manager_attr = 'europa_live'
+                            
+                            if live_manager_attr and hasattr(self, live_manager_attr):
+                                live_manager = getattr(self, live_manager_attr)
+                                if live_manager:
+                                    live_games = getattr(live_manager, "live_games", [])
+                                    if live_games:
+                                        managers_to_try.append((league_key, live_manager))
+                        else:
+                            # For recent and upcoming modes, include all enabled leagues
+                            if league_key == 'eng.1':
+                                attr_name = f"eng1_{mode_type}"
+                            elif league_key == 'esp.1':
+                                attr_name = f"esp1_{mode_type}"
+                            elif league_key == 'ger.1':
+                                attr_name = f"ger1_{mode_type}"
+                            elif league_key == 'ita.1':
+                                attr_name = f"ita1_{mode_type}"
+                            elif league_key == 'fra.1':
+                                attr_name = f"fra1_{mode_type}"
+                            elif league_key == 'usa.1':
+                                attr_name = f"usa1_{mode_type}"
+                            elif league_key == 'uefa.champions':
+                                attr_name = f"champions_{mode_type}"
+                            elif league_key == 'uefa.europa':
+                                attr_name = f"europa_{mode_type}"
+                            else:
+                                continue
+                            
+                            if hasattr(self, attr_name):
+                                manager = getattr(self, attr_name)
+                                if manager:
+                                    managers_to_try.append((league_key, manager))
+                    
+                    # Try each manager until one returns True (has content)
+                    first_manager = True
+                    for league_key, current_manager in managers_to_try:
+                        if current_manager:
+                            # Track which league we're displaying for granular dynamic duration
+                            self._current_display_league = league_key
+                            self._current_display_mode_type = mode_type
+                            
+                            # Only pass force_clear to the first manager
+                            manager_force_clear = force_clear and first_manager
+                            first_manager = False
+                            
+                            result = current_manager.display(manager_force_clear)
+                            # If display returned True, we have content to show
+                            if result is True:
+                                try:
+                                    self._record_dynamic_progress(current_manager)
+                                except Exception as progress_err:
+                                    self.logger.debug(
+                                        "Dynamic progress tracking failed: %s", progress_err
+                                    )
+                                self._evaluate_dynamic_cycle_completion()
+                                return result
+                            # If result is False, try next manager
+                            elif result is False:
+                                continue
+                            # If result is None or other, assume success
+                            else:
+                                return True
+                    
+                    # No manager returned True, return False
+                    return False
+                
                 # Extract the mode type (live, recent, upcoming)
                 mode_type = None
                 if display_mode.endswith('_live'):
@@ -649,23 +750,24 @@ class SoccerScoreboardPlugin(BasePlugin if BasePlugin else object):
         return False
 
     def get_live_modes(self) -> list:
-        """Get list of live modes for enabled leagues with live priority."""
+        """
+        Return the registered plugin mode name(s) that have live content.
+        
+        This should return the mode names as registered in manifest.json, not internal
+        mode names. The plugin is registered with "soccer_live", "soccer_recent", "soccer_upcoming".
+        """
         if not self.is_enabled:
             return []
 
-        prioritized_modes = []
-        for league_key in LEAGUE_KEYS:
-            if (self.league_enabled.get(league_key, False) and 
-                self.league_live_priority.get(league_key, False)):
-                mode_name = f"soccer_{league_key}_live"
-                if mode_name in self.modes:
-                    prioritized_modes.append(mode_name)
-
-        if prioritized_modes:
-            return prioritized_modes
-
-        # Fallback: no prioritized league enabled; expose any live modes available
-        return [mode for mode in self.modes if mode.endswith("_live")]
+        # Check if any league has live content
+        has_any_live = self.has_live_content()
+        
+        if has_any_live:
+            # Return the registered plugin mode name, not internal mode names
+            # The plugin is registered with "soccer_live" in manifest.json
+            return ["soccer_live"]
+        
+        return []
 
     def get_info(self) -> Dict[str, Any]:
         """Get plugin information."""
